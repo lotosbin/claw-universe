@@ -1,0 +1,16 @@
+{
+  "name": "claw-universe-hooks",
+  "version": "1.0.0",
+  "description": "Claude Code Hooks for desktop pet integration",
+  "type": "module",
+  "scripts": {
+    "test": "node claude-code-hook.test.js"
+  },
+  "keywords": [
+    "claude-code",
+    "hook",
+    "desktop-pet"
+  ],
+  "author": "",
+  "license": "MIT"
+}
