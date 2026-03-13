@@ -422,10 +422,10 @@ const server = http.createServer((req, res) => {
   res.end('Not found');
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`
 🐱 桌面宠物服务端已启动
-   地址: http://localhost:${PORT}
+   地址: http://0.0.0.0:${PORT}
    Token: ${TOKEN || '(未设置)'}
    
    端点:
