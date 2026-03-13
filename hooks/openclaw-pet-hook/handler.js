@@ -2,6 +2,7 @@
 /**
  * OpenClaw Pet Hook
  * 发送 OpenClaw 状态到桌面宠物应用
+ * 特性：完全异步，不阻塞 OpenClaw 主流程
  */
 
 const http = require('http');
@@ -15,61 +16,61 @@ const os = require('os');
 const PET_URL = process.env.DESKTOP_PET_URL || 'http://localhost:3456';
 const PET_TOKEN = process.env.DESKTOP_PET_TOKEN || '';
 
-// 发送通知到桌面宠物
+// 静默发送通知（不等待结果，避免阻塞）
 function notifyDesktopPet(event, status, message, details = {}) {
-  return new Promise((resolve, reject) => {
-    const payload = JSON.stringify({
-      event,
-      agent: 'openclaw',
-      status,
-      message,
-      timestamp: Date.now(),
-      details
-    });
-
-    const url = new URL(PET_URL);
-    const options = {
-      hostname: url.hostname,
-      port: url.port || (url.protocol === 'https:' ? 443 : 80),
-      path: '/notify',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload)
-      }
-    };
-
-    if (PET_TOKEN) {
-      options.headers['Authorization'] = `Bearer ${PET_TOKEN}`;
-    }
-
-    const client = url.protocol === 'https:' ? https : http;
-    
-    const req = client.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          console.log(`[OpenClaw-Pet-Hook] 通知成功: ${event} - ${status}`);
-          resolve({ success: true });
-        } else {
-          console.error(`[OpenClaw-Pet-Hook] 通知失败: HTTP ${res.statusCode}`);
-          resolve({ success: false });
-        }
+  // 异步发送，不等待结果
+  setImmediate(() => {
+    try {
+      const payload = JSON.stringify({
+        event,
+        agent: 'openclaw',
+        status,
+        message,
+        timestamp: Date.now(),
+        details
       });
-    });
 
-    req.on('error', (err) => {
-      console.error(`[OpenClaw-Pet-Hook] 连接失败: ${err.message}`);
-      resolve({ success: false });
-    });
-    
-    req.write(payload);
-    req.end();
+      const url = new URL(PET_URL);
+      const options = {
+        hostname: url.hostname,
+        port: url.port || (url.protocol === 'https:' ? 443 : 80),
+        path: '/notify',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload)
+        }
+      };
+
+      if (PET_TOKEN) {
+        options.headers['Authorization'] = `Bearer ${PET_TOKEN}`;
+      }
+
+      const client = url.protocol === 'https:' ? https : http;
+      
+      const req = client.request(options, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            console.log(`[OpenClaw-Pet-Hook] 通知成功: ${event} - ${status}`);
+          }
+        });
+      });
+
+      req.on('error', () => {
+        // 静默忽略网络错误
+      });
+      
+      req.write(payload);
+      req.end();
+    } catch (e) {
+      // 静默忽略所有错误
+    }
   });
 }
 
-// 获取 OpenClaw 状态
+// 获取 OpenClaw 状态（安全版本）
 function getOpenClawStatus() {
   try {
     const statusOutput = execSync('openclaw status --json 2>/dev/null', { 
@@ -83,7 +84,7 @@ function getOpenClawStatus() {
   }
 }
 
-// 获取活跃会话数
+// 获取活跃会话数（安全版本）
 function getActiveSessions() {
   try {
     const sessionsDir = path.join(os.homedir(), '.openclaw', 'sessions');
@@ -97,7 +98,7 @@ function getActiveSessions() {
   return 0;
 }
 
-// 获取 Cron 任务数
+// 获取 Cron 任务数（安全版本）
 function getCronJobs() {
   try {
     const cronDir = path.join(os.homedir(), '.openclaw', 'cron');
@@ -111,63 +112,66 @@ function getCronJobs() {
   return 0;
 }
 
-// 事件处理函数
+// 事件处理函数（安全版本）
 async function handleEvent(event) {
-  const { type, action, sessionKey, timestamp, context } = event;
-  const eventName = type + (action ? `:${action}` : '');
-  
-  console.log(`[OpenClaw-Pet-Hook] 收到事件: ${eventName}`);
-  
   try {
+    const { type, action, sessionKey, timestamp, context } = event;
+    const eventName = type + (action ? `:${action}` : '');
+    
+    console.log(`[OpenClaw-Pet-Hook] 收到事件: ${eventName}`);
+    
     switch (eventName) {
       case 'command:new':
       case 'command:reset':
-        await notifyDesktopPet(eventName, 'thinking', `执行命令: ${action}`, {
+        notifyDesktopPet(eventName, 'thinking', `执行命令: ${action}`, {
           sessionKey,
           timestamp
         });
         break;
         
       case 'session:start':
-        await notifyDesktopPet(eventName, 'active', `会话开始: ${sessionKey}`, {
+        notifyDesktopPet(eventName, 'active', `会话开始: ${sessionKey}`, {
           sessionKey,
           timestamp
         });
         break;
         
       case 'session:end':
-        await notifyDesktopPet(eventName, 'idle', `会话结束: ${sessionKey}`, {
+        notifyDesktopPet(eventName, 'idle', `会话结束: ${sessionKey}`, {
           sessionKey,
           timestamp
         });
         break;
         
       case 'gateway:startup':
-        await notifyDesktopPet(eventName, 'active', 'OpenClaw Gateway 已启动', {
+        notifyDesktopPet(eventName, 'active', 'OpenClaw Gateway 已启动', {
           timestamp
         });
         break;
         
       case 'heartbeat':
       default:
-        // 默认心跳处理
-        const activeSessions = getActiveSessions();
-        const cronJobs = getCronJobs();
-        const status = getOpenClawStatus();
-        
-        const petStatus = activeSessions > 0 ? 'active' : 'idle';
-        const message = activeSessions > 0 
-          ? `OpenClaw 运行中 (${activeSessions} 个活跃会话)`
-          : 'OpenClaw 空闲中';
-        
-        await notifyDesktopPet('heartbeat', petStatus, message, {
-          activeSessions,
-          cronJobs,
-          ...(status?.metrics ? { metrics: status.metrics } : {})
-        });
+        // 默认心跳处理 - 静默处理
+        try {
+          const activeSessions = getActiveSessions();
+          const cronJobs = getCronJobs();
+          
+          const petStatus = activeSessions > 0 ? 'active' : 'idle';
+          const message = activeSessions > 0 
+            ? `OpenClaw 运行中 (${activeSessions} 个活跃会话)`
+            : 'OpenClaw 空闲中';
+          
+          notifyDesktopPet('heartbeat', petStatus, message, {
+            activeSessions,
+            cronJobs
+          });
+        } catch (e) {
+          // 心跳处理错误静默忽略
+        }
         break;
     }
   } catch (e) {
+    // 外层错误静默忽略
     console.error(`[OpenClaw-Pet-Hook] 处理错误: ${e.message}`);
   }
 }
@@ -175,11 +179,22 @@ async function handleEvent(event) {
 // OpenClaw Hook 导出格式 - 必须导出 default 函数
 /**
  * OpenClaw hook handler
+ * 特性：
+ * - 完全异步，不阻塞主流程
+ * - 所有错误内部处理，不会抛出异常
  * @param {Object} event - Hook event
  * @param {Object} context - Hook context
  */
 async function defaultHandler(event, context) {
-  await handleEvent(event);
+  // 使用 setImmediate 确保异步执行，不阻塞
+  setImmediate(() => {
+    try {
+      handleEvent(event);
+    } catch (e) {
+      // 最外层错误捕获，确保不会影响 OpenClaw
+      console.error(`[OpenClaw-Pet-Hook] 异常: ${e.message}`);
+    }
+  });
 }
 
 // 支持直接运行 (CLI)
