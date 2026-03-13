@@ -61,7 +61,7 @@ await runHookTest(
   JSON.stringify({ session_id: "test-123", hook_event_name: "SessionStart" }),
   0,
   "SessionStart should exit 0",
-  { DESKTOP_PET_URL: "http://localhost:19999" }
+  { CLAW_UNIVERSE_URL: "http://localhost:19999" }
 );
 
 // 测试 6: 有效输入 - UserPromptSubmit
@@ -112,22 +112,22 @@ await runHookTest(
   "Unknown event should exit 0"
 );
 
-// 测试 12: 测试PET_URL环境变量
-console.log("\nTest 12: Custom PET_URL");
+// 测试 12: 测试CLAW_UNIVERSE_URL环境变量
+console.log("\nTest 12: Custom CLAW_UNIVERSE_URL");
 await runHookTest(
   JSON.stringify({ session_id: "test-123", hook_event_name: "SessionStart" }),
   0,
-  "Custom PET_URL should work",
-  { DESKTOP_PET_URL: "http://127.0.0.1:19999" }
+  "Custom CLAW_UNIVERSE_URL should work",
+  { CLAW_UNIVERSE_URL: "http://127.0.0.1:19999" }
 );
 
-// 测试 13: 测试PET_TOKEN环境变量
-console.log("\nTest 13: Custom PET_TOKEN");
+// 测试 13: 测试CLAW_UNIVERSE_TOKEN环境变量
+console.log("\nTest 13: Custom CLAW_UNIVERSE_TOKEN");
 await runHookTest(
   JSON.stringify({ session_id: "test-123", hook_event_name: "SessionStart" }),
   0,
-  "Custom PET_TOKEN should work",
-  { DESKTOP_PET_URL: "http://127.0.0.1:19999", DESKTOP_PET_TOKEN: "secret-token" }
+  "Custom CLAW_UNIVERSE_TOKEN should work",
+  { CLAW_UNIVERSE_URL: "http://127.0.0.1:19999", CLAW_UNIVERSE_TOKEN: "secret-token" }
 );
 
 console.log("\n=== Results ===");

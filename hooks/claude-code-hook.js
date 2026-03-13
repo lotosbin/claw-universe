@@ -7,9 +7,9 @@
 import http from "http";
 import https from "https";
 
-// 配置
-const PET_URL = process.env.CLAW_UNIVERSE_URL || "http://localhost:3456";
-const PET_TOKEN = process.env.CLAW_UNIVERSE_TOKEN || "";
+// 配置 - 支持新旧环境变量
+const PET_URL = process.env.CLAW_UNIVERSE_URL || process.env.DESKTOP_PET_URL || "http://localhost:3456";
+const PET_TOKEN = process.env.CLAW_UNIVERSE_TOKEN || process.env.DESKTOP_PET_TOKEN || "";
 
 // 静默发送通知（不等待结果，避免阻塞）
 function notifyDesktopPet(event, status, message, details = {}) {
