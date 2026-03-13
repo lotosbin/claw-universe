@@ -20,74 +20,97 @@ if [ ! -f "$HOOK_SCRIPT" ]; then
     exit 1
 fi
 
-# 创建 settings.json - 使用新格式（数组 + type: command）
+# 创建 settings.json - 使用bun执行，并添加CLAW_UNIVERSE_URL环境变量
+BUN_PATH="/Users/liubinbin/.bun/bin/bun"
 cat > "$SETTINGS_FILE" <<EOF
 {
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOOK_SCRIPT"
+  "SessionStart": [
+    {
+      "matcher": ".*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$BUN_PATH $HOOK_SCRIPT",
+          "env": {
+            "CLAW_UNIVERSE_URL": "http://192.168.28.82:3456"
           }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOOK_SCRIPT"
+        }
+      ]
+    }
+  ],
+  "UserPromptSubmit": [
+    {
+      "matcher": ".*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$BUN_PATH $HOOK_SCRIPT",
+          "env": {
+            "CLAW_UNIVERSE_URL": "http://192.168.28.82:3456"
           }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOOK_SCRIPT"
+        }
+      ]
+    }
+  ],
+  "PreToolUse": [
+    {
+      "matcher": ".*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$BUN_PATH $HOOK_SCRIPT",
+          "env": {
+            "CLAW_UNIVERSE_URL": "http://192.168.28.82:3456"
           }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOOK_SCRIPT"
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": ".*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$BUN_PATH $HOOK_SCRIPT",
+          "env": {
+            "CLAW_UNIVERSE_URL": "http://192.168.28.82:3456"
           }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOOK_SCRIPT"
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "matcher": ".*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$BUN_PATH $HOOK_SCRIPT",
+          "env": {
+            "CLAW_UNIVERSE_URL": "http://192.168.28.82:3456"
           }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOOK_SCRIPT"
+        }
+      ]
+    }
+  ],
+  "SessionEnd": [
+    {
+      "matcher": ".*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$BUN_PATH $HOOK_SCRIPT",
+          "env": {
+            "CLAW_UNIVERSE_URL": "http://192.168.28.82:3456"
           }
-        ]
-      }
-    ]
-  }
+        }
+      ]
+    }
+  ]
 }
 EOF
-echo "Created settings.json with hooks (new format)"
+echo "Created settings.json with hooks (using bun with CLAW_UNIVERSE_URL env)"
 
 echo "Claude Code hooks installed successfully!"
 echo "Hook script: $HOOK_SCRIPT"

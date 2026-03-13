@@ -11,9 +11,9 @@ import https from "https";
 const PET_URL = process.env.CLAW_UNIVERSE_URL || "http://localhost:3456";
 const PET_TOKEN = process.env.CLAW_UNIVERSE_TOKEN || "";
 
-// 静默发送通知（不等待结果，避免阻塞）
+// 静默发送通知（返回Promise确保发送完成）
 function notifyDesktopPet(event, status, message, details = {}) {
-  setImmediate(() => {
+  return new Promise((resolve) => {
     try {
       const payload = JSON.stringify({
         event,
@@ -43,10 +43,11 @@ function notifyDesktopPet(event, status, message, details = {}) {
       const client = url.protocol === "https:" ? https : http;
       const req = client.request(options, () => {});
       req.on("error", () => {});
+      req.on("close", () => resolve());
       req.write(payload);
       req.end();
     } catch (e) {
-      // 静默忽略所有错误
+      resolve();
     }
   });
 }
@@ -74,10 +75,13 @@ function mapStatus(hookEvent) {
 // 主函数（安全版本）
 async function main() {
   try {
-    let input = "";
-    for await (const chunk of process.stdin) {
-      input += chunk;
-    }
+    // 从 stdin 读取所有数据
+    const input = await new Promise((resolve) => {
+      let data = '';
+      process.stdin.on('data', chunk => data += chunk);
+      process.stdin.on('end', () => resolve(data));
+      process.stdin.on('error', () => resolve(''));
+    });
 
     if (!input.trim()) {
       process.exit(0);
@@ -96,17 +100,15 @@ async function main() {
     }
 
     const { status, message } = mapStatus(hook_event_name);
-    notifyDesktopPet(hook_event_name, status, message, { session_id });
+    await notifyDesktopPet(hook_event_name, status, message, { session_id });
   } catch (e) {
     // 静默忽略所有错误
   }
   process.exit(0);
 }
 
-// 如果是直接运行
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
-}
+// 直接运行时执行main
+main();
 
 // 导出给 Claude Code Hook 使用
 export default async function (event) {
